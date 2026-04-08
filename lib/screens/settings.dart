@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:safe_drive/widgets/sensitivity_selector.dart';
-import 'package:safe_drive/widgets/settings_action_button.dart';
-import 'package:safe_drive/widgets/settings_card.dart';
-import 'package:safe_drive/widgets/settings_info_row.dart';
-import 'package:safe_drive/widgets/settings_section_header.dart';
-import 'package:safe_drive/widgets/settings_switch_tile.dart';
+import 'package:safe_drive/widgets/setting/sensitivity_selector.dart';
+import 'package:safe_drive/widgets/setting/settings_action_button.dart';
+import 'package:safe_drive/widgets/setting/settings_card.dart';
+import 'package:safe_drive/widgets/setting/settings_info_row.dart';
+import 'package:safe_drive/widgets/setting/settings_section_header.dart';
+import 'package:safe_drive/widgets/setting/settings_switch_tile.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);

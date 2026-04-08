@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:safe_drive/widgets/history/history_trip_card.dart';
+import 'package:safe_drive/widgets/history/section_card.dart';
+import 'package:safe_drive/widgets/history/section_header.dart';
+import 'package:safe_drive/widgets/history/stat_value_tile.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -39,9 +43,33 @@ class HistoryScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              _buildTripCard('Today, 2:30 PM', '2h 15m', '3', 'Moderate', accentYellow),
-              _buildTripCard('Yesterday, 8:00 AM', '1h 45m', '1', 'Good', accentGreen),
-              _buildTripCard('Feb 26, 6:00 PM', '3h 30m', '7', 'High', accentRed),
+              HistoryTripCard(
+                date: 'Today, 2:30 PM',
+                duration: '2h 15m',
+                alerts: '3',
+                status: 'Moderate',
+                statusColor: accentYellow,
+                surfaceColor: cardBgColor,
+                textColor: textGrey,
+              ),
+              HistoryTripCard(
+                date: 'Yesterday, 8:00 AM',
+                duration: '1h 45m',
+                alerts: '1',
+                status: 'Good',
+                statusColor: accentGreen,
+                surfaceColor: cardBgColor,
+                textColor: textGrey,
+              ),
+              HistoryTripCard(
+                date: 'Feb 26, 6:00 PM',
+                duration: '3h 30m',
+                alerts: '7',
+                status: 'High',
+                statusColor: accentRed,
+                surfaceColor: cardBgColor,
+                textColor: textGrey,
+              ),
               const SizedBox(height: 80), // Bottom padding for navbar clearance
             ],
           ),
@@ -72,63 +100,61 @@ class HistoryScreen extends StatelessWidget {
   }
 
   Widget _buildSummaryCard() {
-    return Container(
+    return SectionCard(
+      surfaceColor: cardBgColor,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.calendar_today_outlined, color: accentGreen, size: 20),
-              const SizedBox(width: 8),
-              const Text(
-                'This Week Summary',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+          const SectionHeader(
+            icon: Icons.calendar_today_outlined,
+            title: 'This Week Summary',
+            accentColor: Color(0xFF32D74B),
           ),
           const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: _buildStatItem('Total Trips', '24', Colors.white)),
-              Expanded(child: _buildStatItem('Total Alerts', '24', accentYellow)),
+              Expanded(
+                child: StatValueTile(
+                  label: 'Total Trips',
+                  value: '24',
+                  labelColor: textGrey,
+                  valueColor: Colors.white,
+                ),
+              ),
+              Expanded(
+                child: StatValueTile(
+                  label: 'Total Alerts',
+                  value: '24',
+                  labelColor: textGrey,
+                  valueColor: accentYellow,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _buildStatItem('Driving Time', '42h', Colors.white)),
-              Expanded(child: _buildStatItem('Avg Fatigue', '28%', accentGreen)),
+              Expanded(
+                child: StatValueTile(
+                  label: 'Driving Time',
+                  value: '42h',
+                  labelColor: textGrey,
+                  valueColor: Colors.white,
+                ),
+              ),
+              Expanded(
+                child: StatValueTile(
+                  label: 'Avg Fatigue',
+                  value: '28%',
+                  labelColor: textGrey,
+                  valueColor: accentGreen,
+                ),
+              ),
             ],
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStatItem(String label, String value, Color valueColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(color: textGrey, fontSize: 13)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
     );
   }
 
@@ -183,8 +209,12 @@ class HistoryScreen extends StatelessWidget {
                 ),
                 titlesData: FlTitlesData(
                   show: true,
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -218,8 +248,14 @@ class HistoryScreen extends StatelessWidget {
                 borderData: FlBorderData(
                   show: true,
                   border: Border(
-                    bottom: BorderSide(color: textGrey.withOpacity(0.3), width: 1),
-                    left: BorderSide(color: textGrey.withOpacity(0.3), width: 1),
+                    bottom: BorderSide(
+                      color: textGrey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                    left: BorderSide(
+                      color: textGrey.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                 ),
                 minX: 0,
@@ -286,17 +322,36 @@ class HistoryScreen extends StatelessWidget {
                       showTitles: true,
                       reservedSize: 28,
                       getTitlesWidget: (double value, TitleMeta meta) {
-                        const style = TextStyle(color: Color(0xFF8E8E93), fontSize: 10);
+                        const style = TextStyle(
+                          color: Color(0xFF8E8E93),
+                          fontSize: 10,
+                        );
                         String text;
                         switch (value.toInt()) {
-                          case 0: text = 'Mon'; break;
-                          case 1: text = 'Tue'; break;
-                          case 2: text = 'Wed'; break;
-                          case 3: text = 'Thu'; break;
-                          case 4: text = 'Fri'; break;
-                          case 5: text = 'Sat'; break;
-                          case 6: text = 'Sun'; break;
-                          default: text = ''; break;
+                          case 0:
+                            text = 'Mon';
+                            break;
+                          case 1:
+                            text = 'Tue';
+                            break;
+                          case 2:
+                            text = 'Wed';
+                            break;
+                          case 3:
+                            text = 'Thu';
+                            break;
+                          case 4:
+                            text = 'Fri';
+                            break;
+                          case 5:
+                            text = 'Sat';
+                            break;
+                          case 6:
+                            text = 'Sun';
+                            break;
+                          default:
+                            text = '';
+                            break;
                         }
                         return Padding(
                           padding: const EdgeInsets.only(top: 8.0),
@@ -318,8 +373,12 @@ class HistoryScreen extends StatelessWidget {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 gridData: FlGridData(
                   show: true,
@@ -339,8 +398,14 @@ class HistoryScreen extends StatelessWidget {
                 borderData: FlBorderData(
                   show: true,
                   border: Border(
-                    bottom: BorderSide(color: textGrey.withOpacity(0.3), width: 1),
-                    left: BorderSide(color: textGrey.withOpacity(0.3), width: 1),
+                    bottom: BorderSide(
+                      color: textGrey.withOpacity(0.3),
+                      width: 1,
+                    ),
+                    left: BorderSide(
+                      color: textGrey.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                 ),
                 barGroups: [
@@ -371,55 +436,6 @@ class HistoryScreen extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
         ),
       ],
-    );
-  }
-
-  Widget _buildTripCard(String date, String duration, String alerts, String status, Color statusColor) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: cardBgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                date,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Duration: $duration   •   $alerts alerts',
-                style: TextStyle(color: textGrey, fontSize: 13),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: statusColor,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
