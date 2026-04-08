@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safe_drive/screens/history.dart';
 import 'screens/settings.dart';
 
 void main() {
@@ -34,7 +35,7 @@ class _RootNavigationScreenState extends State<RootNavigationScreen> {
 
   late final List<Widget> _pages = [
     const _PlaceholderScreen(title: 'Home'),
-    const _PlaceholderScreen(title: 'History'),
+    const HistoryScreen(),
     const SettingsScreen(),
   ];
 
