@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:safe_drive/widgets/section_card.dart';
-import 'package:safe_drive/widgets/status_chip.dart';
+import 'package:safe_drive/widgets/history/section_card.dart';
+import 'package:safe_drive/widgets/history/status_chip.dart';
+
+
 
 class HistoryTripCard extends StatelessWidget {
   const HistoryTripCard({
