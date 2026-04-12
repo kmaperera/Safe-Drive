@@ -36,7 +36,7 @@ class _RootNavigationScreenState extends State<RootNavigationScreen> {
 
   late final List<Widget> _pages = [
     //const _PlaceholderScreen(title: 'Home'),
-    const DashboardScreen(),
+    const Dashboard(),
     const HistoryScreen(),
     const SettingsScreen(),
   ];
