@@ -13,7 +13,7 @@ class LiveMonitoringScreen extends StatelessWidget {
           child: Column(
             children: [
 
-              // 🔴 TOP BAR
+              //  TOP BAR
               Row(
                 
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -36,12 +36,12 @@ class LiveMonitoringScreen extends StatelessWidget {
 
               const SizedBox(height: 20),
 
-              // ✅ JOINED STATUS BOX (FIXED UI)
+              //  JOINED STATUS BOX (FIXED UI)
               _statusSection(),
 
               const SizedBox(height: 40),
 
-              // 🟩 FACE DETECTION BOX
+              //  FACE DETECTION BOX
               Container(
                 width: 200,
                 height: 250,
@@ -67,7 +67,7 @@ class LiveMonitoringScreen extends StatelessWidget {
 
               const Spacer(),
 
-              // 🔴 BOTTOM BUTTONS
+              // BOTTOM BUTTONS
               Row(
                 children: [
                   Expanded(
@@ -100,7 +100,7 @@ class LiveMonitoringScreen extends StatelessWidget {
     );
   }
 
-  // ✅ JOINED STATUS CARD
+  //  JOINED STATUS CARD
   Widget _statusSection() {
     return Container(
       decoration: BoxDecoration(
@@ -182,7 +182,7 @@ class LiveMonitoringScreen extends StatelessWidget {
     );
   }
 
-  // 🟢 DOT
+  //  DOT
   Widget _dot() {
     return Container(
       width: 8,
