@@ -1,7 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
 
-class LiveMonitoringScreen extends StatelessWidget {
+class LiveMonitoringScreen extends StatefulWidget {
   const LiveMonitoringScreen({super.key});
+
+  @override
+  State<LiveMonitoringScreen> createState() => _LiveMonitoringScreenState();
+}
+
+class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
+  CameraController? _controller;
+  List<CameraDescription>? cameras;
+
+  @override
+  void initState() {
+    super.initState();
+    initCamera();
+  }
+
+  Future<void> initCamera() async {
+    cameras = await availableCameras();
+
+    _controller = CameraController(
+      cameras![1], // 🔥 front camera (change to 0 if error)
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+
+    await _controller!.initialize();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,59 +52,55 @@ class LiveMonitoringScreen extends StatelessWidget {
 
               // 🔴 TOP BAR
               Row(
-                
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const Text(
                     "Live Monitoring",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
+                    onPressed: () => Navigator.pop(context),
                   )
                 ],
               ),
 
               const SizedBox(height: 20),
 
-              // ✅ JOINED STATUS BOX (FIXED UI)
+              // ✅ STATUS BOX
               _statusSection(),
 
               const SizedBox(height: 40),
 
-              // 🟩 FACE DETECTION BOX
+              // 🎥 CAMERA FACE BOX
               Container(
-                width: 200,
-                height: 250,
+                width: 190,
+                height: 280,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.greenAccent, width: 3),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      left: 60,
-                      top: 100,
-                      child: _dot(),
-                    ),
-                    Positioned(
-                      right: 60,
-                      top: 100,
-                      child: _dot(),
-                    ),
-                  ],
-                ),
+                child: _controller == null || !_controller!.value.isInitialized
+                    ? const Center(child: CircularProgressIndicator())
+                    : ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: Stack(
+                          children: [
+
+                            // CAMERA PREVIEW
+                            CameraPreview(_controller!),
+
+                            // OVERLAY DOTS
+                           // Positioned(left: 70, top: 120, child: _dot()),
+                           // Positioned(right: 70, top: 120, child: _dot()),
+                          ],
+                        ),
+                      ),
               ),
 
               const Spacer(),
 
-              // 🔴 BOTTOM BUTTONS
+              // 🔴 BUTTONS
               Row(
                 children: [
                   Expanded(
@@ -79,9 +112,7 @@ class LiveMonitoringScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
+                      onPressed: () => Navigator.pop(context),
                       child: const Text("Stop Monitoring"),
                     ),
                   ),
@@ -100,7 +131,7 @@ class LiveMonitoringScreen extends StatelessWidget {
     );
   }
 
-  // ✅ JOINED STATUS CARD
+  // ✅ STATUS SECTION
   Widget _statusSection() {
     return Container(
       decoration: BoxDecoration(
@@ -111,7 +142,7 @@ class LiveMonitoringScreen extends StatelessWidget {
       child: Row(
         children: [
 
-          // LEFT SIDE
+          // LEFT
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -120,35 +151,26 @@ class LiveMonitoringScreen extends StatelessWidget {
                 children: const [
                   Row(
                     children: [
-                      Icon(Icons.remove_red_eye, size: 8, color: Colors.green),
+                      Icon(Icons.remove_red_eye, size: 16, color: Colors.green),
                       SizedBox(width: 6),
-                      Text(
-                        "Eye Status",
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                      Text("Eye Status",
+                          style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                   SizedBox(height: 5),
-                  Text(
-                    "Eyes Open",
-                    style: TextStyle(
-                      color: Colors.greenAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text("Eyes Open",
+                      style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
           ),
 
           // DIVIDER
-          Container(
-            width: 1,
-            height: 50,
-            color: Colors.grey,
-          ),
+          Container(width: 1, height: 50, color: Colors.grey),
 
-          // RIGHT SIDE
+          // RIGHT
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -159,20 +181,15 @@ class LiveMonitoringScreen extends StatelessWidget {
                     children: [
                       Icon(Icons.circle, size: 8, color: Colors.green),
                       SizedBox(width: 6),
-                      Text(
-                        "Fatigue Score",
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                      Text("Fatigue Score",
+                          style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                   SizedBox(height: 5),
-                  Text(
-                    "10%",
-                    style: TextStyle(
-                      color: Colors.greenAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  Text("10%",
+                      style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
