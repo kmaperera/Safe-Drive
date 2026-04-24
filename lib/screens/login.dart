@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:google_sign_in/google_sign_in.dart';
 import '../widgets/auth/auth_textfield.dart';
 import '../widgets/auth/auth_button.dart';
 import 'signup.dart';
@@ -51,6 +51,42 @@ class _LoginState extends State<Login> {
       setState(() => isLoading = false);
     }
   }
+
+  Future<void> signInWithGoogle() async {
+  try {
+    setState(() => isLoading = true);
+
+    final GoogleSignInAccount? googleUser =
+        await GoogleSignIn().signIn();
+
+    if (googleUser == null) {
+      setState(() => isLoading = false);
+      return;
+    }
+
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    await FirebaseAuth.instance.signInWithCredential(credential);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RootNavigationScreen(),
+      ),
+    );
+
+  } catch (e) {
+    showMessage("Google Sign-In failed");
+  } finally {
+    setState(() => isLoading = false);
+  }
+}
 
   void showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -159,6 +195,21 @@ class _LoginState extends State<Login> {
                   ),
 
                   const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                 style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 55),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: signInWithGoogle,
+                icon: const Icon(Icons.g_mobiledata, color: Colors.red, size: 28),
+                label: const Text(
+                  "Continue with Google",
+                  style: TextStyle(color: Colors.black),
+                ),
+              ),
 
                   /// Sign Up Link
                   Center(

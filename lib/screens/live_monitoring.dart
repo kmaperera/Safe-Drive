@@ -22,14 +22,16 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
     cameras = await availableCameras();
 
     _controller = CameraController(
-      cameras![1], // front camera (change to 0 if error)
+      cameras![1], // 🔥 front camera (change to 0 if error)
       ResolutionPreset.medium,
       enableAudio: false,
     );
 
     await _controller!.initialize();
 
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
@@ -65,14 +67,14 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
 
               const SizedBox(height: 20),
 
-              // ✅ STATUS SECTION
+              // ✅ STATUS BOX
               _statusSection(),
 
               const SizedBox(height: 40),
 
               // 🎥 CAMERA FACE BOX
               Container(
-                width: 200,
+                width: 190,
                 height: 280,
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.greenAccent, width: 3),
@@ -82,13 +84,23 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : ClipRRect(
                         borderRadius: BorderRadius.circular(10),
-                        child: CameraPreview(_controller!),
+                        child: Stack(
+                          children: [
+
+                            // CAMERA PREVIEW
+                            CameraPreview(_controller!),
+
+                            // OVERLAY DOTS
+                           // Positioned(left: 70, top: 120, child: _dot()),
+                           // Positioned(right: 70, top: 120, child: _dot()),
+                          ],
+                        ),
                       ),
               ),
 
               const Spacer(),
 
-              // 🔴 BOTTOM BUTTONS
+              // 🔴 BUTTONS
               Row(
                 children: [
                   Expanded(
@@ -119,7 +131,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
     );
   }
 
-  // ✅ STATUS BOX (JOINED)
+  // ✅ STATUS SECTION
   Widget _statusSection() {
     return Container(
       decoration: BoxDecoration(
@@ -183,6 +195,18 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // 🟢 DOT
+  Widget _dot() {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: const BoxDecoration(
+        color: Colors.greenAccent,
+        shape: BoxShape.circle,
       ),
     );
   }
