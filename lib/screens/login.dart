@@ -210,24 +210,37 @@ class _LoginState extends State<Login> {
                   style: TextStyle(color: Colors.black),
                 ),
               ),
-
+              const SizedBox(height: 10),
                   /// Sign Up Link
                   Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const Signup(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        "Don't have an account? Sign Up",
-                        style: TextStyle(color: Colors.green),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const Signup(),
                       ),
+                    );
+                  },
+                  child: RichText(
+                    text: const TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "Don't have an account? ",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        TextSpan(
+                          text: "Sign Up",
+                          style: TextStyle(
+                            color: Colors.green, // ✅ only this part green
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                     ),
                   ),
+                ),
                 ],
               ),
             ),
