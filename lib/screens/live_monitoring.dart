@@ -4,6 +4,13 @@ import 'package:camera/camera.dart';
 class LiveMonitoringScreen extends StatefulWidget {
   const LiveMonitoringScreen({super.key});
 
+  static const Color _bgColor = Color(0xFF121212);
+  static const Color _surfaceColor = Color(0xFF1C1C1E);
+  static const Color _textSecondary = Color(0xFFA0A0A0);
+  static const Color _accentGreen = Color(0xFF65F58B);
+  static const Color _accentYellow = Color(0xFFFFD60A);
+  static const Color _accentRed = Color(0xFFFF453A);
+
   @override
   State<LiveMonitoringScreen> createState() => _LiveMonitoringScreenState();
 }
@@ -41,11 +48,12 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0F1A),
+      backgroundColor: _bgColor,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
               // 🔴 TOP BAR
@@ -62,21 +70,26 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
                   )
                 ],
               ),
+              const SizedBox(height: 8),
+              const Text(
+                "Real-time fatigue tracking",
+                style: TextStyle(color: _textSecondary, fontSize: 16),
+              ),
 
               const SizedBox(height: 20),
 
               // ✅ STATUS SECTION
               _statusSection(),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 28),
 
               // 🎥 CAMERA FACE BOX
               Container(
                 width: 200,
                 height: 280,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.greenAccent, width: 3),
-                  borderRadius: BorderRadius.circular(12),
+                  color: _surfaceColor,
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: _controller == null || !_controller!.value.isInitialized
                     ? const Center(child: CircularProgressIndicator())
@@ -94,22 +107,26 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
                   Expanded(
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        backgroundColor: _accentRed,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: const Size(double.infinity, 56),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       onPressed: () => Navigator.pop(context),
                       child: const Text("Stop Monitoring"),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   FloatingActionButton(
-                    backgroundColor: Colors.yellow,
+                    backgroundColor: _accentYellow,
+                    foregroundColor: _bgColor,
+                    elevation: 0,
                     onPressed: () {},
-                    child: const Icon(Icons.call, color: Colors.black),
-                  )
+                    child: const Icon(Icons.call),
+                  ),
                 ],
               ),
             ],
@@ -122,10 +139,11 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
   // ✅ STATUS BOX (JOINED)
   Widget _statusSection() {
     return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1C2E),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blueAccent),
+        color: _surfaceColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Row(
         children: [
@@ -133,7 +151,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
           // LEFT
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
@@ -161,13 +179,13 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
           // RIGHT
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
                   Row(
                     children: [
-                      Icon(Icons.circle, size: 8, color: Colors.green),
+                      Icon(Icons.circle, size: 10, color: _accentGreen),
                       SizedBox(width: 6),
                       Text("Fatigue Score",
                           style: TextStyle(color: Colors.grey)),
