@@ -14,7 +14,6 @@ class LiveMonitoringScreen extends StatefulWidget {
 
 class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
     with WidgetsBindingObserver {
-
   CameraController? _controller;
   List<CameraDescription>? cameras;
 
@@ -130,7 +129,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
 
       if (mounted) setState(() {});
     } catch (e) {
-      print("ML ERROR: $e");
+      debugPrint("ML ERROR: $e");
     }
 
     isProcessing = false;
@@ -138,10 +137,10 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
 
   /// 🔥 FATIGUE + ALERT LOGIC (FIXED)
   void checkEyeClosure() {
+    if (!mounted) return;
+
     if (eyesClosed) {
-      if (eyesClosedStart == null) {
-        eyesClosedStart = DateTime.now();
-      }
+      eyesClosedStart ??= DateTime.now();
 
       final duration = DateTime.now().difference(eyesClosedStart!);
 
@@ -156,7 +155,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
       if (duration.inSeconds >= 5 && !alertShown) {
         alertShown = true;
 
-        print("ALERT TRIGGERED");
+        debugPrint("ALERT TRIGGERED");
 
         // ✅ FIXED SAFE UI CALL
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -165,7 +164,6 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
           speakAlert();
         });
       }
-
     } else {
       setState(() {
         fatigueStatus = "Normal 😊";
@@ -181,7 +179,8 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
     await flutterTts.setLanguage("en-US");
     await flutterTts.setSpeechRate(0.5);
     await flutterTts.speak(
-        "Driver wake up. You appear tired. Please stay alert.");
+      "Driver wake up. You appear tired. Please stay alert.",
+    );
   }
 
   /// 🚨 ALERT UI (SAFE)
@@ -193,8 +192,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
       barrierDismissible: false,
       builder: (_) => AlertDialog(
         backgroundColor: Colors.black,
-        title: const Text("Wake Up!",
-            style: TextStyle(color: Colors.red)),
+        title: const Text("Wake Up!", style: TextStyle(color: Colors.red)),
         content: const Text(
           "You look drowsy. Please stay alert!",
           style: TextStyle(color: Colors.white),
@@ -205,8 +203,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
               Navigator.of(context).pop();
               alertShown = false;
             },
-            child: const Text("OK",
-                style: TextStyle(color: Colors.green)),
+            child: const Text("OK", style: TextStyle(color: Colors.green)),
           ),
         ],
       ),
@@ -231,16 +228,17 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text("Live Monitoring",
-                      style: TextStyle(color: Colors.white)),
+                  const Text(
+                    "Live Monitoring",
+                    style: TextStyle(color: Colors.white),
+                  ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
-                  )
+                  ),
                 ],
               ),
 
@@ -250,18 +248,17 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
 
               const SizedBox(height: 40),
 
-              Container(
-                width: 190,
-                height: 280,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.greenAccent, width: 3),
-                  borderRadius: BorderRadius.circular(12),
+              _fatigueGaugeSection(),
+
+              if (_controller != null && _controller!.value.isInitialized)
+                Offstage(
+                  offstage: true,
+                  child: SizedBox(
+                    width: 1,
+                    height: 1,
+                    child: CameraPreview(_controller!),
+                  ),
                 ),
-                child: _controller == null ||
-                        !_controller!.value.isInitialized
-                    ? const Center(child: CircularProgressIndicator())
-                    : CameraPreview(_controller!),
-              ),
 
               const Spacer(),
 
@@ -295,15 +292,16 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
       ),
       child: Row(
         children: [
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Eye Status",
-                      style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Eye Status",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 5),
                   Text(
                     eyesClosed ? "Closed 🔴" : "Open 🟢",
@@ -325,8 +323,10 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Fatigue Status",
-                      style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Fatigue Status",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 5),
                   Text(
                     fatigueStatus,
@@ -334,14 +334,108 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
                       color: fatigueStatus.contains("Normal")
                           ? Colors.green
                           : fatigueStatus.contains("Drowsy")
-                              ? Colors.orange
-                              : Colors.red,
+                          ? Colors.orange
+                          : Colors.red,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _fatigueLevel() {
+    if (fatigueStatus.contains("Sleepy")) return 0.9;
+    if (fatigueStatus.contains("Drowsy")) return 0.55;
+    return 0.15;
+  }
+
+  Color _fatigueColor() {
+    if (fatigueStatus.contains("Sleepy")) return Colors.redAccent;
+    if (fatigueStatus.contains("Drowsy")) return Colors.orangeAccent;
+    return Colors.greenAccent;
+  }
+
+  Widget _fatigueGaugeSection() {
+    final double level = _fatigueLevel();
+    final Color levelColor = _fatigueColor();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1C2E),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: levelColor.withValues(alpha: 0.55), width: 2),
+      ),
+      child: Column(
+        children: [
+          const Text(
+            "Fatigue Gauge",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(
+            width: 175,
+            height: 175,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 175,
+                  height: 175,
+                  child: CircularProgressIndicator(
+                    value: 1,
+                    strokeWidth: 14,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.white.withValues(alpha: 0.12),
+                    ),
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+                SizedBox(
+                  width: 175,
+                  height: 175,
+                  child: CircularProgressIndicator(
+                    value: level,
+                    strokeWidth: 14,
+                    valueColor: AlwaysStoppedAnimation<Color>(levelColor),
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "${(level * 100).round()}%",
+                      style: TextStyle(
+                        color: levelColor,
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      eyesClosed ? "Eyes Closed" : "Eyes Open",
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            "Eye detection is running in background",
+            style: TextStyle(color: Colors.white54, fontSize: 12),
           ),
         ],
       ),

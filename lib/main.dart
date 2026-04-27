@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
 import 'screens/history.dart';
 import 'screens/settings.dart';
 import 'screens/dashboard.dart';
 import 'screens/login.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // 🔥 IMPORTANT
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {
+    // App still runs if Firebase isn't configured in this build flavor.
+  }
   runApp(const MyApp());
 }
 
@@ -58,10 +61,7 @@ class _RootNavigationScreenState extends State<RootNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _pages),
 
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 0, 24, 12),
