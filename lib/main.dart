@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 
 import 'screens/history.dart';
 import 'screens/settings.dart';
 import 'screens/dashboard.dart';
 import 'screens/login.dart';
+import 'screens/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // 🔥 IMPORTANT
-  runApp(const MyApp());
+  await Firebase.initializeApp();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeNotifier(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -17,21 +25,63 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = context.watch<ThemeNotifier>();
+
     return MaterialApp(
       title: 'Safe Drive',
       debugShowCheckedModeBanner: false,
+
+      /// ✅ LIGHT THEME
       theme: ThemeData(
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFF121212),
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: Colors.white,
+        primaryColor: Colors.green,
+        cardColor: const Color(0xFFF5F5F5),
+
+        colorScheme: const ColorScheme.light(
+          primary: Colors.green,
+          secondary: Colors.greenAccent,
+          onPrimary: Colors.white,
+        ),
+
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.black),
+          bodyMedium: TextStyle(color: Colors.black87),
+        ),
       ),
 
-      // ✅ Routes for navigation
+      /// ✅ DARK THEME
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        primaryColor: const Color(0xFF65F58B),
+        cardColor: const Color(0xFF1C1C1E),
+
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF65F58B),
+          secondary: Colors.greenAccent,
+          onPrimary: Colors.black,
+        ),
+
+        textTheme: const TextTheme(
+          bodyLarge: TextStyle(color: Colors.white),
+          bodyMedium: TextStyle(color: Colors.white70),
+        ),
+      ),
+
+      /// ✅ THEME SWITCH
+      themeMode:
+          themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
+
+      /// ✅ ROUTES
       routes: {
         '/login': (context) => const Login(),
         '/home': (context) => const RootNavigationScreen(),
       },
 
-      // 👉 Start from Login
+      /// ✅ START SCREEN
       home: const Login(),
     );
   }
@@ -43,10 +93,12 @@ class RootNavigationScreen extends StatefulWidget {
   const RootNavigationScreen({super.key});
 
   @override
-  State<RootNavigationScreen> createState() => _RootNavigationScreenState();
+  State<RootNavigationScreen> createState() =>
+      _RootNavigationScreenState();
 }
 
-class _RootNavigationScreenState extends State<RootNavigationScreen> {
+class _RootNavigationScreenState
+    extends State<RootNavigationScreen> {
   int _currentIndex = 0;
 
   late final List<Widget> _pages = [
@@ -57,20 +109,25 @@ class _RootNavigationScreenState extends State<RootNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,
       ),
 
+      /// ✅ BOTTOM NAVBAR (THEME-AWARE)
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 0, 24, 12),
         child: Container(
           height: 76,
           decoration: BoxDecoration(
-            color: const Color(0xFF111318),
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(38),
-            border: Border.all(color: Colors.black.withOpacity(0.35)),
+            border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.2),
+            ),
           ),
           child: Row(
             children: [
@@ -117,8 +174,11 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color active = const Color(0xFF65F58B);
-    final Color inactive = const Color(0xFF9CA3AF);
+    final theme = Theme.of(context);
+
+    final Color active = theme.colorScheme.primary;
+    final Color inactive =
+        theme.textTheme.bodyMedium!.color!.withOpacity(0.6);
 
     return Expanded(
       child: InkWell(

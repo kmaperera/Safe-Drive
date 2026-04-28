@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 
+const Color _bgColor = Color(0xFF121212);
+const Color _surfaceColor = Color(0xFF1C1C1E);
+const Color _textSecondary = Color(0xFFA0A0A0);
+const Color _accentGreen = Color(0xFF65F58B);
+const Color _accentYellow = Color(0xFFFFD60A);
+const Color _accentRed = Color(0xFFFF453A);
+
 class LiveMonitoringScreen extends StatefulWidget {
   const LiveMonitoringScreen({super.key});
-
-  static const Color _bgColor = Color(0xFF121212);
-  static const Color _surfaceColor = Color(0xFF1C1C1E);
-  static const Color _textSecondary = Color(0xFFA0A0A0);
-  static const Color _accentGreen = Color(0xFF65F58B);
-  static const Color _accentYellow = Color(0xFFFFD60A);
-  static const Color _accentRed = Color(0xFFFF453A);
 
   @override
   State<LiveMonitoringScreen> createState() => _LiveMonitoringScreenState();
@@ -27,16 +27,16 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
 
   Future<void> initCamera() async {
     cameras = await availableCameras();
+    if (cameras != null && cameras!.length > 1) {
+      _controller = CameraController(
+        cameras![1], // front camera
+        ResolutionPreset.medium,
+        enableAudio: false,
+      );
 
-    _controller = CameraController(
-      cameras![1], // front camera (change to 0 if error)
-      ResolutionPreset.medium,
-      enableAudio: false,
-    );
-
-    await _controller!.initialize();
-
-    if (mounted) setState(() {});
+      await _controller!.initialize();
+      if (mounted) setState(() {});
+    }
   }
 
   @override
@@ -55,7 +55,6 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // 🔴 TOP BAR
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -136,7 +135,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
     );
   }
 
-  // ✅ STATUS BOX (JOINED)
+  // ✅ STATUS BOX
   Widget _statusSection() {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -147,7 +146,6 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
       ),
       child: Row(
         children: [
-
           // LEFT
           Expanded(
             child: Padding(
@@ -159,8 +157,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen> {
                     children: [
                       Icon(Icons.remove_red_eye, size: 16, color: Colors.green),
                       SizedBox(width: 6),
-                      Text("Eye Status",
-                          style: TextStyle(color: Colors.grey)),
+                      Text("Eye Status", style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                   SizedBox(height: 5),

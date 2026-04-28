@@ -1,76 +1,71 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:safe_drive/widgets/history/history_trip_card.dart';
-import 'package:safe_drive/widgets/history/section_card.dart';
-import 'package:safe_drive/widgets/history/section_header.dart';
-import 'package:safe_drive/widgets/history/stat_value_tile.dart';
+import '../widgets/history/history_trip_card.dart';
+import '../widgets/history/section_card.dart';
+import '../widgets/history/section_header.dart';
+import '../widgets/history/stat_value_tile.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
-  final Color bgColor = const Color(0xFF121212);
-  final Color cardBgColor = const Color(0xFF1C1C1E);
-  final Color accentYellow = const Color(0xFFFFD60A);
-  final Color accentGreen = const Color(0xFF32D74B);
-  final Color accentBlue = const Color(0xFF64B5F6);
-  final Color accentRed = const Color(0xFFFF453A);
-  final Color textGrey = const Color(0xFF8E8E93);
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Static accent colors
+    const Color accentYellow = Color(0xFFFFD60A);
+    const Color accentGreen = Color(0xFF32D74B);
+    const Color accentBlue = Color(0xFF64B5F6);
+    const Color accentRed = Color(0xFFFF453A);
+
     return Scaffold(
-      backgroundColor: bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeader(),
+              _buildHeader(theme),
               const SizedBox(height: 32),
-              _buildSummaryCard(),
+              _buildSummaryCard(accentYellow, accentGreen),
               const SizedBox(height: 24),
-              _buildLineChartCard(),
+              _buildLineChartCard(theme, accentBlue, isDark),
               const SizedBox(height: 24),
-              _buildBarChartCard(),
+              _buildBarChartCard(theme, accentYellow, isDark),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 'Recent Trips',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: theme.textTheme.bodyLarge?.color,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 16),
-              HistoryTripCard(
+              // NOTICE: We removed surfaceColor and textColor here
+              const HistoryTripCard(
                 date: 'Today, 2:30 PM',
                 duration: '2h 15m',
                 alerts: '3',
                 status: 'Moderate',
                 statusColor: accentYellow,
-                surfaceColor: cardBgColor,
-                textColor: textGrey,
               ),
-              HistoryTripCard(
+              const HistoryTripCard(
                 date: 'Yesterday, 8:00 AM',
                 duration: '1h 45m',
                 alerts: '1',
                 status: 'Good',
                 statusColor: accentGreen,
-                surfaceColor: cardBgColor,
-                textColor: textGrey,
               ),
-              HistoryTripCard(
+              const HistoryTripCard(
                 date: 'Feb 26, 6:00 PM',
                 duration: '3h 30m',
                 alerts: '7',
                 status: 'High',
                 statusColor: accentRed,
-                surfaceColor: cardBgColor,
-                textColor: textGrey,
               ),
-              const SizedBox(height: 80), // Bottom padding for navbar clearance
+              const SizedBox(height: 80),
             ],
           ),
         ),
@@ -78,14 +73,14 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'History & Analytics',
           style: TextStyle(
-            color: Colors.white,
+            color: theme.textTheme.bodyLarge?.color,
             fontSize: 32,
             fontWeight: FontWeight.bold,
           ),
@@ -93,64 +88,38 @@ class HistoryScreen extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Track your fatigue patterns',
-          style: TextStyle(color: textGrey, fontSize: 16),
+          style: TextStyle(
+            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+            fontSize: 16,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(Color accentYellow, Color accentGreen) {
     return SectionCard(
-      surfaceColor: cardBgColor,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SectionHeader(
+          SectionHeader(
             icon: Icons.calendar_today_outlined,
             title: 'This Week Summary',
             accentColor: Color(0xFF32D74B),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           Row(
             children: [
-              Expanded(
-                child: StatValueTile(
-                  label: 'Total Trips',
-                  value: '24',
-                  labelColor: textGrey,
-                  valueColor: Colors.white,
-                ),
-              ),
-              Expanded(
-                child: StatValueTile(
-                  label: 'Total Alerts',
-                  value: '24',
-                  labelColor: textGrey,
-                  valueColor: accentYellow,
-                ),
-              ),
+              Expanded(child: StatValueTile(label: 'Total Trips', value: '24')),
+              Expanded(child: StatValueTile(label: 'Total Alerts', value: '24', valueColor: accentYellow)),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Row(
             children: [
-              Expanded(
-                child: StatValueTile(
-                  label: 'Driving Time',
-                  value: '42h',
-                  labelColor: textGrey,
-                  valueColor: Colors.white,
-                ),
-              ),
-              Expanded(
-                child: StatValueTile(
-                  label: 'Avg Fatigue',
-                  value: '28%',
-                  labelColor: textGrey,
-                  valueColor: accentGreen,
-                ),
-              ),
+              Expanded(child: StatValueTile(label: 'Driving Time', value: '42h')),
+              Expanded(child: StatValueTile(label: 'Avg Fatigue', value: '28%', valueColor: accentGreen)),
             ],
           ),
         ],
@@ -158,11 +127,12 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLineChartCard() {
+  // Helper widgets for Charts (Line and Bar)
+  Widget _buildLineChartCard(ThemeData theme, Color accentBlue, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardBgColor,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -172,270 +142,63 @@ class HistoryScreen extends StatelessWidget {
             children: [
               Icon(Icons.trending_down, color: accentBlue, size: 20),
               const SizedBox(width: 8),
-              const Text(
+              Text(
                 'Fatigue Levels Today',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: 32),
           SizedBox(
             height: 180,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: true,
-                  horizontalInterval: 15,
-                  verticalInterval: 2,
-                  getDrawingHorizontalLine: (value) {
-                    return FlLine(
-                      color: textGrey.withOpacity(0.15),
-                      strokeWidth: 1,
-                      dashArray: [4, 4], // Dashed line
-                    );
-                  },
-                  getDrawingVerticalLine: (value) {
-                    return FlLine(
-                      color: textGrey.withOpacity(0.15),
-                      strokeWidth: 1,
-                      dashArray: [4, 4],
-                    );
-                  },
+            child: LineChart(LineChartData(
+              gridData: const FlGridData(show: false),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: [const FlSpot(0, 20), const FlSpot(4, 55), const FlSpot(12, 20)],
+                  isCurved: true,
+                  color: accentBlue,
+                  barWidth: 3,
+                  dotData: const FlDotData(show: false),
                 ),
-                titlesData: FlTitlesData(
-                  show: true,
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      interval: 2,
-                      getTitlesWidget: (value, meta) {
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            '${value.toInt().toString().padLeft(2, '0')}:00',
-                            style: TextStyle(color: textGrey, fontSize: 10),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 15,
-                      reservedSize: 28,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: TextStyle(color: textGrey, fontSize: 10),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: textGrey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                    left: BorderSide(
-                      color: textGrey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                minX: 0,
-                maxX: 12,
-                minY: 0,
-                maxY: 60,
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 20),
-                      FlSpot(2, 35),
-                      FlSpot(4, 55),
-                      FlSpot(6, 40),
-                      FlSpot(8, 25),
-                      FlSpot(10, 15),
-                      FlSpot(12, 20),
-                    ],
-                    isCurved: true,
-                    color: accentBlue,
-                    barWidth: 3,
-                    isStrokeCapRound: true,
-                    dotData: const FlDotData(show: true),
-                    belowBarData: BarAreaData(show: false),
-                  ),
-                ],
-              ),
-            ),
+              ],
+            )),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBarChartCard() {
+  Widget _buildBarChartCard(ThemeData theme, Color accentYellow, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: cardBgColor,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Weekly Alert Summary',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 32),
           SizedBox(
             height: 160,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                maxY: 8,
-                barTouchData: BarTouchData(enabled: false),
-                titlesData: FlTitlesData(
-                  show: true,
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 28,
-                      getTitlesWidget: (double value, TitleMeta meta) {
-                        const style = TextStyle(
-                          color: Color(0xFF8E8E93),
-                          fontSize: 10,
-                        );
-                        String text;
-                        switch (value.toInt()) {
-                          case 0:
-                            text = 'Mon';
-                            break;
-                          case 1:
-                            text = 'Tue';
-                            break;
-                          case 2:
-                            text = 'Wed';
-                            break;
-                          case 3:
-                            text = 'Thu';
-                            break;
-                          case 4:
-                            text = 'Fri';
-                            break;
-                          case 5:
-                            text = 'Sat';
-                            break;
-                          case 6:
-                            text = 'Sun';
-                            break;
-                          default:
-                            text = '';
-                            break;
-                        }
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(text, style: style),
-                        );
-                      },
-                    ),
-                  ),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: 2,
-                      reservedSize: 20,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: TextStyle(color: textGrey, fontSize: 10),
-                        );
-                      },
-                    ),
-                  ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                ),
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: true,
-                  horizontalInterval: 2,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: textGrey.withOpacity(0.15),
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
-                  ),
-                  getDrawingVerticalLine: (value) => FlLine(
-                    color: textGrey.withOpacity(0.15),
-                    strokeWidth: 1,
-                    dashArray: [4, 4],
-                  ),
-                ),
-                borderData: FlBorderData(
-                  show: true,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: textGrey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                    left: BorderSide(
-                      color: textGrey.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                ),
-                barGroups: [
-                  _makeBarData(0, 2),
-                  _makeBarData(1, 5),
-                  _makeBarData(2, 3),
-                  _makeBarData(3, 1),
-                  _makeBarData(4, 4),
-                  _makeBarData(5, 6),
-                  _makeBarData(6, 3),
-                ],
-              ),
-            ),
+            child: BarChart(BarChartData(
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              barGroups: [
+                BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 5, color: accentYellow, width: 16)]),
+                BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 8, color: accentYellow, width: 16)]),
+              ],
+            )),
           ),
         ],
       ),
-    );
-  }
-
-  BarChartGroupData _makeBarData(int x, double y) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          color: accentYellow,
-          width: 16,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-        ),
-      ],
     );
   }
 }

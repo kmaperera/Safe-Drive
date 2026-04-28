@@ -68,7 +68,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -79,15 +79,15 @@ class _LoginState extends State<Login> {
                 children: [
 
                   /// Logo
-                  const Center(
+                  Center(
                     child: Column(
                       children: [
-                        Icon(Icons.directions_car, color: Colors.white, size: 40),
+                        Icon(Icons.directions_car, color: Theme.of(context).textTheme.bodyLarge!.color, size: 40),
                         SizedBox(height: 10),
                         Text(
                           "SafeDrive",
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Theme.of(context).textTheme.bodyLarge!.color,
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -103,7 +103,7 @@ class _LoginState extends State<Login> {
                   const SizedBox(height: 40),
 
                   /// Email
-                  const Text("Email", style: TextStyle(color: Colors.white)),
+                  Text("Email", style: TextStyle(color: Theme.of(context).textTheme.bodyLarge!.color)),
                   const SizedBox(height: 8),
                   AuthTextField(
                     controller: emailController,
@@ -114,7 +114,7 @@ class _LoginState extends State<Login> {
                   const SizedBox(height: 20),
 
                   /// Password
-                  const Text("Password", style: TextStyle(color: Colors.white)),
+                  Text("Password", style: TextStyle(color: Theme.of(context).textTheme.bodyLarge!.color)),
                   const SizedBox(height: 8),
                   AuthTextField(
                     controller: passwordController,
@@ -126,11 +126,11 @@ class _LoginState extends State<Login> {
                   const SizedBox(height: 10),
 
                   /// Forgot Password
-                  const Align(
+                  Align(
                     alignment: Alignment.centerRight,
                     child: Text(
                       "Forgot Password?",
-                      style: TextStyle(color: Colors.green),
+                      style: TextStyle(color: Theme.of(context).colorScheme.primary),
                     ),
                   ),
 
@@ -171,9 +171,9 @@ class _LoginState extends State<Login> {
                           ),
                         );
                       },
-                      child: const Text(
+                      child: Text(
                         "Don't have an account? Sign Up",
-                        style: TextStyle(color: Colors.green),
+                        style: TextStyle(color: Theme.of(context).colorScheme.primary),
                       ),
                     ),
                   ),
