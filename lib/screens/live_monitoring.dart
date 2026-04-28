@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+
+import '../services/fatigue_detector_service.dart';
+import '../widgets/fatigue_gauge.dart';
+import '../widgets/status_section.dart';
 
 class LiveMonitoringScreen extends StatefulWidget {
   const LiveMonitoringScreen({super.key});
@@ -16,9 +18,8 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
     with WidgetsBindingObserver {
   CameraController? _controller;
   List<CameraDescription>? cameras;
-
-  late FaceDetector _faceDetector;
-  FlutterTts flutterTts = FlutterTts();
+  final FatigueDetectorService _detectorService = FatigueDetectorService();
+  final FlutterTts flutterTts = FlutterTts();
 
   bool isProcessing = false;
   DateTime? lastProcessed;
@@ -29,11 +30,16 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
   bool eyesClosed = false;
   int closedEyeFrames = 0;
 
+  // 👄 Yawn detection
+  bool yawning = false;
+  int yawnFrames = 0;
+
   // ⚡ Fatigue
   String fatigueStatus = "Normal";
 
   // ⏱️ Timer
   DateTime? eyesClosedStart;
+  DateTime? yawnStart;
   bool alertShown = false;
 
   Timer? timer;
@@ -44,13 +50,6 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
     WidgetsBinding.instance.addObserver(this);
 
     initCamera();
-
-    _faceDetector = FaceDetector(
-      options: FaceDetectorOptions(
-        enableClassification: true,
-        performanceMode: FaceDetectorMode.fast,
-      ),
-    );
 
     timer = Timer.periodic(const Duration(seconds: 1), (_) {
       checkEyeClosure();
@@ -79,7 +78,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
     setState(() {});
   }
 
-  /// 🔥 ML PROCESS
+  /// 🔥 ML PROCESS - delegated to FatigueDetectorService
   Future<void> processCameraImage(CameraImage image) async {
     if (isProcessing) return;
 
@@ -96,27 +95,11 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
     isProcessing = true;
 
     try {
-      final bytes = Uint8List.fromList(
-        image.planes.expand((plane) => plane.bytes).toList(),
-      );
+      final result = await _detectorService.detectFromCameraImage(image);
 
-      final inputImage = InputImage.fromBytes(
-        bytes: bytes,
-        metadata: InputImageMetadata(
-          size: Size(image.width.toDouble(), image.height.toDouble()),
-          rotation: InputImageRotation.rotation270deg,
-          format: InputImageFormat.nv21,
-          bytesPerRow: image.planes.first.bytesPerRow,
-        ),
-      );
-
-      final faces = await _faceDetector.processImage(inputImage);
-
-      if (faces.isNotEmpty) {
-        final face = faces.first;
-
-        final left = face.leftEyeOpenProbability ?? 1.0;
-        final right = face.rightEyeOpenProbability ?? 1.0;
+      if (result.faceFound) {
+        final left = result.leftEyeOpenProb;
+        final right = result.rightEyeOpenProb;
 
         if (left < 0.6 && right < 0.6) {
           closedEyeFrames++;
@@ -125,54 +108,88 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
         }
 
         eyesClosed = closedEyeFrames > 2;
+
+        if (result.yawning) {
+          yawnFrames++;
+        } else {
+          yawnFrames = 0;
+        }
+
+        yawning = yawnFrames > 1;
+      } else {
+        eyesClosed = false;
+        yawning = false;
+        closedEyeFrames = 0;
+        yawnFrames = 0;
       }
 
       if (mounted) setState(() {});
     } catch (e) {
-      debugPrint("ML ERROR: $e");
+      debugPrint('ML ERROR: $e');
     }
 
     isProcessing = false;
   }
 
-  /// 🔥 FATIGUE + ALERT LOGIC (FIXED)
+  /// 🔥 FATIGUE + ALERT LOGIC USING EYE + YAWN DETECTION
   void checkEyeClosure() {
     if (!mounted) return;
 
+    final DateTime now = DateTime.now();
+
     if (eyesClosed) {
-      eyesClosedStart ??= DateTime.now();
-
-      final duration = DateTime.now().difference(eyesClosedStart!);
-
-      setState(() {
-        if (duration.inSeconds >= 5) {
-          fatigueStatus = "Sleepy 😴";
-        } else {
-          fatigueStatus = "Drowsy 😐";
-        }
-      });
-
-      if (duration.inSeconds >= 5 && !alertShown) {
-        alertShown = true;
-
-        debugPrint("ALERT TRIGGERED");
-
-        // ✅ FIXED SAFE UI CALL
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          showAlert();
-          speakAlert();
-        });
-      }
+      eyesClosedStart ??= now;
     } else {
-      setState(() {
-        fatigueStatus = "Normal 😊";
-      });
-
       eyesClosedStart = null;
+    }
+
+    if (yawning) {
+      yawnStart ??= now;
+    } else {
+      yawnStart = null;
+    }
+
+    final Duration eyeDuration = eyesClosedStart == null
+        ? Duration.zero
+        : now.difference(eyesClosedStart!);
+    final Duration yawnDuration = yawnStart == null
+        ? Duration.zero
+        : now.difference(yawnStart!);
+
+    final bool sleepy =
+        eyeDuration.inSeconds >= 5 ||
+        (eyesClosed && yawnDuration.inSeconds >= 2) ||
+        yawnDuration.inSeconds >= 4;
+    final bool drowsy = eyesClosed || yawning;
+
+    setState(() {
+      if (sleepy) {
+        fatigueStatus = "Sleepy 😴";
+      } else if (drowsy) {
+        fatigueStatus = "Drowsy 😐";
+      } else {
+        fatigueStatus = "Normal 😊";
+      }
+    });
+
+    if (sleepy && !alertShown) {
+      alertShown = true;
+
+      debugPrint("ALERT TRIGGERED");
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showAlert();
+        speakAlert();
+      });
+    }
+
+    if (!sleepy) {
       alertShown = false;
     }
   }
+
+  // yawning detection moved into FatigueDetectorService
 
   /// 🔊 VOICE ALERT
   Future<void> speakAlert() async {
@@ -214,7 +231,7 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
   void dispose() {
     timer?.cancel();
     _controller?.dispose();
-    _faceDetector.close();
+    _detectorService.dispose();
     flutterTts.stop();
     super.dispose();
   }
@@ -244,11 +261,17 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
 
               const SizedBox(height: 20),
 
-              _statusSection(),
+              StatusSection(
+                eyesClosed: eyesClosed,
+                fatigueStatus: fatigueStatus,
+              ),
 
               const SizedBox(height: 40),
 
-              _fatigueGaugeSection(),
+              FatigueGauge(
+                fatigueStatus: fatigueStatus,
+                eyesClosed: eyesClosed,
+              ),
 
               if (_controller != null && _controller!.value.isInitialized)
                 Offstage(
@@ -261,7 +284,6 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
                 ),
 
               const Spacer(),
-
               Row(
                 children: [
                   Expanded(
@@ -316,7 +338,6 @@ class _LiveMonitoringScreenState extends State<LiveMonitoringScreen>
           ),
 
           Container(width: 1, height: 50, color: Colors.grey),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12),
