@@ -1,25 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:safe_drive/services/trip_history_service.dart';
 import '../widgets/history/history_trip_card.dart';
 import '../widgets/history/section_card.dart';
 import '../widgets/history/section_header.dart';
 import '../widgets/history/stat_value_tile.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
+
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  final TripHistoryService _tripHistoryService = TripHistoryService();
+  List<TripRecord> _recentTrips = <TripRecord>[];
+  bool _isLoadingTrips = true;
+
+  // Colors
+  final Color bgColor = const Color(0xFF121212);
+  final Color cardBgColor = const Color(0xFF1C1C1E);
+  final Color accentYellow = const Color(0xFFFFD60A);
+  final Color accentGreen = const Color(0xFF32D74B);
+  final Color accentBlue = const Color(0xFF64B5F6);
+  final Color accentRed = const Color(0xFFFF453A);
+  final Color textGrey = const Color(0xFF8E8E93);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTrips();
+  }
+
+  Future<void> _loadTrips() async {
+    await _tripHistoryService.syncPendingTrips();
+    final List<TripRecord> trips = await _tripHistoryService.loadTrips();
+    if (!mounted) return;
+
+    setState(() {
+      _recentTrips = trips;
+      _isLoadingTrips = false;
+    });
+  }
+
+  String _formatDuration(int totalSeconds) {
+    final int hours = totalSeconds ~/ 3600;
+    final int minutes = (totalSeconds % 3600) ~/ 60;
+    return hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+  }
+
+  String _formatTripDate(DateTime tripDate) {
+    final DateTime now = DateTime.now();
+    final DateTime today = DateTime(now.year, now.month, now.day);
+    final DateTime tripDay = DateTime(tripDate.year, tripDate.month, tripDate.day);
+    final Duration dayDiff = today.difference(tripDay);
+
+    final String hour = tripDate.hour.toString().padLeft(2, '0');
+    final String minute = tripDate.minute.toString().padLeft(2, '0');
+    
+    if (dayDiff.inDays == 0) return 'Today, $hour:$minute';
+    if (dayDiff.inDays == 1) return 'Yesterday, $hour:$minute';
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[tripDate.month - 1]} ${tripDate.day}, $hour:$minute';
+  }
+
+  String _statusLabel(double fatigueScore) {
+    if (fatigueScore >= 0.78) return 'High';
+    if (fatigueScore >= 0.58) return 'Moderate';
+    return 'Good';
+  }
+
+  Color _statusColor(double fatigueScore) {
+    if (fatigueScore >= 0.78) return accentRed;
+    if (fatigueScore >= 0.58) return accentYellow;
+    return accentGreen;
+  }
+
+  // --- Chart Data Helper Methods ---
+
+  List<FlSpot> _getTodayFatigueSpots() {
+    final DateTime now = DateTime.now();
+    final todayTrips = _recentTrips.where((trip) {
+      return trip.tripDate.year == now.year &&
+          trip.tripDate.month == now.month &&
+          trip.tripDate.day == now.day;
+    }).toList()..sort((a, b) => a.tripDate.compareTo(b.tripDate));
+
+    if (todayTrips.isEmpty) return const [FlSpot(0, 0), FlSpot(23, 0)];
+
+    return todayTrips.map((trip) {
+      final double x = trip.tripDate.hour + (trip.tripDate.minute / 60.0);
+      final double y = (trip.fatigueScore * 100).clamp(0.0, 100.0);
+      return FlSpot(x, y);
+    }).toList();
+  }
+
+  BarChartGroupData _makeBarData(int x, double y) {
+    return BarChartGroupData(
+      x: x,
+      barRods: [
+        BarChartRodData(
+          toY: y,
+          color: accentYellow,
+          width: 12,
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ],
+    );
+  }
+
+  List<BarChartGroupData> _getWeeklyAlertBars() {
+    final now = DateTime.now();
+    final startDate = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+    final List<double> alertsByWeekday = List.filled(7, 0);
+
+    for (final trip in _recentTrips) {
+      if (trip.tripDate.isAfter(startDate)) {
+        final int index = trip.tripDate.weekday - 1; 
+        alertsByWeekday[index] += trip.fatigueCount;
+      }
+    }
+    return List.generate(7, (i) => _makeBarData(i, alertsByWeekday[i]));
+  }
+
+  // --- UI Build Methods ---
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    // Static accent colors
-    const Color accentYellow = Color(0xFFFFD60A);
-    const Color accentGreen = Color(0xFF32D74B);
-    const Color accentBlue = Color(0xFF64B5F6);
-    const Color accentRed = Color(0xFFFF453A);
-
     return Scaffold(
+      backgroundColor: bgColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
@@ -28,43 +140,18 @@ class HistoryScreen extends StatelessWidget {
             children: [
               _buildHeader(theme),
               const SizedBox(height: 32),
-              _buildSummaryCard(accentYellow, accentGreen),
+              _buildSummaryCard(),
               const SizedBox(height: 24),
-              _buildLineChartCard(theme, accentBlue, isDark),
+              _buildLineChartCard(theme),
               const SizedBox(height: 24),
-              _buildBarChartCard(theme, accentYellow, isDark),
+              _buildBarChartCard(theme),
               const SizedBox(height: 32),
               Text(
                 'Recent Trips',
-                style: TextStyle(
-                  color: theme.textTheme.bodyLarge?.color,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              // NOTICE: We removed surfaceColor and textColor here
-              const HistoryTripCard(
-                date: 'Today, 2:30 PM',
-                duration: '2h 15m',
-                alerts: '3',
-                status: 'Moderate',
-                statusColor: accentYellow,
-              ),
-              const HistoryTripCard(
-                date: 'Yesterday, 8:00 AM',
-                duration: '1h 45m',
-                alerts: '1',
-                status: 'Good',
-                statusColor: accentGreen,
-              ),
-              const HistoryTripCard(
-                date: 'Feb 26, 6:00 PM',
-                duration: '3h 30m',
-                alerts: '7',
-                status: 'High',
-                statusColor: accentRed,
-              ),
+              _buildRecentTripsList(),
               const SizedBox(height: 80),
             ],
           ),
@@ -77,49 +164,47 @@ class HistoryScreen extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
+        const Text(
           'History & Analytics',
-          style: TextStyle(
-            color: theme.textTheme.bodyLarge?.color,
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
           'Track your fatigue patterns',
-          style: TextStyle(
-            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
-            fontSize: 16,
-          ),
+          style: TextStyle(color: textGrey.withValues(alpha: 0.6), fontSize: 16),
         ),
       ],
     );
   }
 
-  Widget _buildSummaryCard(Color accentYellow, Color accentGreen) {
+  Widget _buildSummaryCard() {
+    final int totalTrips = _recentTrips.length;
+    final int totalAlerts = _recentTrips.fold(0, (sum, trip) => sum + trip.fatigueCount);
+    final int totalSeconds = _recentTrips.fold(0, (sum, trip) => sum + trip.tripDurationSeconds);
+    final double avgFatigue = totalTrips == 0 
+        ? 0 
+        : (_recentTrips.map((t) => t.fatigueScore).reduce((a, b) => a + b) / totalTrips);
+
     return SectionCard(
-      padding: EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SectionHeader(
+          const SectionHeader(
             icon: Icons.calendar_today_outlined,
-            title: 'This Week Summary',
+            title: 'Saved Trips Summary',
             accentColor: Color(0xFF32D74B),
           ),
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           Row(
             children: [
-              Expanded(child: StatValueTile(label: 'Total Trips', value: '24')),
-              Expanded(child: StatValueTile(label: 'Total Alerts', value: '24', valueColor: accentYellow)),
+              Expanded(child: StatValueTile(label: 'Total Trips', value: '$totalTrips')),
+              Expanded(child: StatValueTile(label: 'Total Alerts', value: '$totalAlerts', valueColor: accentYellow)),
             ],
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: StatValueTile(label: 'Driving Time', value: '42h')),
-              Expanded(child: StatValueTile(label: 'Avg Fatigue', value: '28%', valueColor: accentGreen)),
+              Expanded(child: StatValueTile(label: 'Driving Time', value: '${totalSeconds ~/ 3600}h')),
+              Expanded(child: StatValueTile(label: 'Avg Fatigue', value: '${(avgFatigue * 100).toStringAsFixed(0)}%', valueColor: accentGreen)),
             ],
           ),
         ],
@@ -127,14 +212,27 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  // Helper widgets for Charts (Line and Bar)
-  Widget _buildLineChartCard(ThemeData theme, Color accentBlue, bool isDark) {
+  Widget _buildRecentTripsList() {
+    if (_isLoadingTrips) return const Center(child: CircularProgressIndicator());
+    if (_recentTrips.isEmpty) {
+      return Text('No trips found yet.', style: TextStyle(color: textGrey));
+    }
+    return Column(
+      children: _recentTrips.take(5).map((trip) => HistoryTripCard(
+        date: _formatTripDate(trip.tripDate),
+        duration: _formatDuration(trip.tripDurationSeconds),
+        alerts: trip.fatigueCount.toString(),
+        status: _statusLabel(trip.fatigueScore),
+        statusColor: _statusColor(trip.fatigueScore),
+      )).toList(),
+    );
+  }
+
+  Widget _buildLineChartCard(ThemeData theme) {
+    final spots = _getTodayFatigueSpots();
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: cardBgColor, borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -142,60 +240,80 @@ class HistoryScreen extends StatelessWidget {
             children: [
               Icon(Icons.trending_down, color: accentBlue, size: 20),
               const SizedBox(width: 8),
-              Text(
-                'Fatigue Levels Today',
-                style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 18, fontWeight: FontWeight.w600),
-              ),
+              const Text('Fatigue Levels Today', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 32),
           SizedBox(
             height: 180,
-            child: LineChart(LineChartData(
-              gridData: const FlGridData(show: false),
-              titlesData: const FlTitlesData(show: false),
-              borderData: FlBorderData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: [const FlSpot(0, 20), const FlSpot(4, 55), const FlSpot(12, 20)],
-                  isCurved: true,
-                  color: accentBlue,
-                  barWidth: 3,
-                  dotData: const FlDotData(show: false),
+            child: LineChart(
+              LineChartData(
+                gridData: const FlGridData(show: false),
+                titlesData: FlTitlesData(
+                  show: true,
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) => Text('${value.toInt()}:00', style: TextStyle(color: textGrey, fontSize: 10)),
+                    ),
+                  ),
                 ),
-              ],
-            )),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: spots,
+                    isCurved: true,
+                    color: accentBlue,
+                    barWidth: 3,
+                    dotData: const FlDotData(show: false),
+                    belowBarData: BarAreaData(show: true, color: accentBlue.withValues(alpha: 0.1)),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildBarChartCard(ThemeData theme, Color accentYellow, bool isDark) {
+  Widget _buildBarChartCard(ThemeData theme) {
+    final barGroups = _getWeeklyAlertBars();
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: cardBgColor, borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Weekly Alert Summary',
-            style: TextStyle(color: theme.textTheme.bodyLarge?.color, fontSize: 18, fontWeight: FontWeight.w600),
-          ),
+          const Text('Weekly Alert Summary', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600)),
           const SizedBox(height: 32),
           SizedBox(
             height: 160,
-            child: BarChart(BarChartData(
-              titlesData: const FlTitlesData(show: false),
-              borderData: FlBorderData(show: false),
-              barGroups: [
-                BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: 5, color: accentYellow, width: 16)]),
-                BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: 8, color: accentYellow, width: 16)]),
-              ],
-            )),
+            child: BarChart(
+              BarChartData(
+                maxY: 20,
+                titlesData: FlTitlesData(
+                  show: true,
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                        return Text(days[value.toInt() % 7], style: TextStyle(color: textGrey, fontSize: 10));
+                      },
+                    ),
+                  ),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: const FlGridData(show: false),
+                borderData: FlBorderData(show: false),
+                barGroups: barGroups,
+              ),
+            ),
           ),
         ],
       ),

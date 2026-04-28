@@ -8,7 +8,7 @@ import 'screens/dashboard.dart';
 import 'screens/login.dart';
 import 'screens/theme_provider.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
@@ -38,13 +38,11 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: Colors.white,
         primaryColor: Colors.green,
         cardColor: const Color(0xFFF5F5F5),
-
         colorScheme: const ColorScheme.light(
           primary: Colors.green,
           secondary: Colors.greenAccent,
           onPrimary: Colors.white,
         ),
-
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.black),
           bodyMedium: TextStyle(color: Colors.black87),
@@ -58,13 +56,11 @@ class MyApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF121212),
         primaryColor: const Color(0xFF65F58B),
         cardColor: const Color(0xFF1C1C1E),
-
         colorScheme: const ColorScheme.dark(
           primary: Color(0xFF65F58B),
           secondary: Colors.greenAccent,
           onPrimary: Colors.black,
         ),
-
         textTheme: const TextTheme(
           bodyLarge: TextStyle(color: Colors.white),
           bodyMedium: TextStyle(color: Colors.white70),
@@ -72,8 +68,7 @@ class MyApp extends StatelessWidget {
       ),
 
       /// ✅ THEME SWITCH
-      themeMode:
-          themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: themeProvider.isDark ? ThemeMode.dark : ThemeMode.light,
 
       /// ✅ ROUTES
       routes: {
@@ -81,7 +76,6 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const RootNavigationScreen(),
       },
 
-      /// ✅ START SCREEN
       home: const Login(),
     );
   }
@@ -93,12 +87,10 @@ class RootNavigationScreen extends StatefulWidget {
   const RootNavigationScreen({super.key});
 
   @override
-  State<RootNavigationScreen> createState() =>
-      _RootNavigationScreenState();
+  State<RootNavigationScreen> createState() => _RootNavigationScreenState();
 }
 
-class _RootNavigationScreenState
-    extends State<RootNavigationScreen> {
+class _RootNavigationScreenState extends State<RootNavigationScreen> {
   int _currentIndex = 0;
 
   late final List<Widget> _pages = [
@@ -112,12 +104,7 @@ class _RootNavigationScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _pages,
-      ),
-
-      /// ✅ BOTTOM NAVBAR (THEME-AWARE)
+      body: IndexedStack(index: _currentIndex, children: _pages),
       bottomNavigationBar: SafeArea(
         minimum: const EdgeInsets.fromLTRB(24, 0, 24, 12),
         child: Container(
@@ -126,7 +113,8 @@ class _RootNavigationScreenState
             color: theme.cardColor,
             borderRadius: BorderRadius.circular(38),
             border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.2),
+              color:
+                  theme.colorScheme.outline.withValues(alpha: 0.2), // ✅ Updated
             ),
           ),
           child: Row(
@@ -157,8 +145,6 @@ class _RootNavigationScreenState
   }
 }
 
-/// ================= NAV ITEM =================
-
 class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.icon,
@@ -175,10 +161,9 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     final Color active = theme.colorScheme.primary;
-    final Color inactive =
-        theme.textTheme.bodyMedium!.color!.withOpacity(0.6);
+    final Color inactive = (theme.textTheme.bodyMedium?.color ?? Colors.grey)
+        .withValues(alpha: 0.6); // ✅ Updated
 
     return Expanded(
       child: InkWell(
